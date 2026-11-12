@@ -9,6 +9,12 @@ import { registerTools } from "./tools";
 
 const app = new WorkshopApp();
 app.render();
-registerTools(app);
 
-if (!document.modelContext) document.getElementById("no-webmcp")!.hidden = false;
+if (document.modelContext) {
+  // The page lives as long as its tools, so this is never aborted today; it is
+  // here so a future view change can unregister them.
+  const tools = new AbortController();
+  registerTools(app, tools.signal);
+} else {
+  document.getElementById("no-webmcp")!.hidden = false;
+}

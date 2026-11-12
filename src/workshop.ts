@@ -42,6 +42,8 @@ export interface Workshop {
 export interface Refusal {
   error: string;
   code: "WRONG_CHILD" | "WRONG_CHIMNEY" | "MISSING_TOY" | "UNWANTED_TOY" | "SLEIGH_BUSY";
+  /** Every refusal can be fixed and tried again. */
+  retryable: true;
 }
 
 export interface Delivery {
@@ -118,22 +120,22 @@ export function loadSleigh(
   random: Random = Math.random,
 ): { workshop: Workshop; result: Delivery | Refusal } {
   const { letter, sack } = workshop;
-  const refuse = (code: Refusal["code"], error: string) => ({ workshop, result: { error, code } });
+  const refuse = (code: Refusal["code"], error: string) => ({ workshop, result: { error, code, retryable: true as const } });
 
   if (to.trim().toLowerCase() !== letter.child.toLowerCase()) {
-    return refuse("WRONG_CHILD", `This letter is from ${letter.child}, not ${to || "nobody"}.`);
+    return refuse("WRONG_CHILD", `This letter is from ${letter.child}, not ${to || "nobody"}. Load the sleigh again for ${letter.child}.`);
   }
   if (address.trim() !== letter.chimney) {
-    return refuse("WRONG_CHIMNEY", `The reindeer can't find "${address}". ${letter.child} lives at ${letter.chimney}.`);
+    return refuse("WRONG_CHIMNEY", `The reindeer can't find "${address}". Use the chimney exactly as the letter gives it.`);
   }
   const remaining = [...sack];
   for (const wish of letter.wishes) {
     const index = remaining.findIndex((toy) => toy.toy === wish.toy && toy.colour === wish.colour);
-    if (index === -1) return refuse("MISSING_TOY", `${letter.child} asked for ${describe(wish)}, but it isn't in the sack.`);
+    if (index === -1) return refuse("MISSING_TOY", `${letter.child} asked for ${describe(wish)}, but it isn't in the sack. Build it, then load the sleigh again.`);
     remaining.splice(index, 1);
   }
   const extra = remaining[0];
-  if (extra) return refuse("UNWANTED_TOY", `${letter.child} didn't ask for ${describe(extra)}. Empty the sack and try again.`);
+  if (extra) return refuse("UNWANTED_TOY", `${letter.child} didn't ask for ${describe(extra)}. Empty the sack, build only the letter's toys, then load the sleigh again.`);
 
   const delivered = workshop.delivered + 1;
   return {
