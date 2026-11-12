@@ -23,8 +23,12 @@ const TOY_EMOJI: Record<Toy, string> = {
   dinosaur: "🦕",
 };
 
-/** How long the elf takes per toy and the sleigh per flight, so an audience can follow along. */
+/**
+ * How long the elf takes per toy, how long a finished toy stays in the
+ * spotlight, and how long the sleigh is away, so an audience can follow along.
+ */
 const BUILD_MS = 700;
+const SHOW_MS = 600;
 const FLIGHT_MS = 2400;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -57,6 +61,8 @@ function gift(toy: Wish): HTMLElement {
 export class WorkshopApp {
   #state = rules.newWorkshop();
   #flying = false;
+  /** Builds run one after another, even when calls overlap, so every toy gets its own animation. */
+  #builds: Promise<unknown> = Promise.resolve();
 
   render(): void {
     this.#renderLetter();
@@ -75,19 +81,29 @@ export class WorkshopApp {
     return structuredClone(this.#state.letter);
   }
 
-  async buildToy(wish: Wish): Promise<BuiltToy & { sackSize: number }> {
+  buildToy(wish: Wish): Promise<BuiltToy & { sackSize: number }> {
     this.#log("build_toy", wish, TOY_EMOJI[wish.toy]);
+    const build = this.#builds.then(() => this.#build(wish));
+    this.#builds = build;
+    return build;
+  }
+
+  /** Resolves only once the toy has dropped into the sack and the elf has cheered, so the next call can't cut it short. */
+  async #build(wish: Wish): Promise<BuiltToy & { sackSize: number }> {
     this.#say(`Building a ${wish.colour} ${wish.toy}…`, "busy");
     await wait(BUILD_MS);
     const { workshop, toy } = rules.buildToy(this.#state, wish);
     this.#state = workshop;
-    this.#renderSack();
+    element("sack").append(gift(toy));
+    this.#markNewest();
     this.#say(`One ${wish.colour} ${wish.toy}, coming up!`, "happy");
+    await wait(SHOW_MS);
     return { ...toy, sackSize: workshop.sack.length };
   }
 
   async loadSleigh(to: string, address: string): Promise<Delivery | Refusal> {
     this.#log("load_sleigh", { to, address }, "🛷");
+    await this.#builds; // The sleigh waits for toys still on the bench.
     if (this.#flying) return { error: "The sleigh is still out delivering. Try again in a few seconds.", code: "SLEIGH_BUSY", retryable: true };
     const { workshop, result } = rules.loadSleigh(this.#state, to, address);
     if ("error" in result) {
@@ -141,6 +157,13 @@ export class WorkshopApp {
   #renderSack(): void {
     const sack = element("sack");
     sack.replaceChildren(...this.#state.sack.map(gift));
+    this.#markNewest();
+  }
+
+  /** Only the newest gift plays the drop, and only once, so earlier gifts sit still. */
+  #markNewest(): void {
+    const sack = element("sack");
+    for (const node of sack.querySelectorAll(".new")) node.classList.remove("new");
     sack.lastElementChild?.classList.add("new");
     element("sack-empty").hidden = this.#state.sack.length > 0;
   }
