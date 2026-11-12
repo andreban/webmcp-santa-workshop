@@ -54,5 +54,11 @@ jobs:
             echo "GCS_BUCKET and GCS_PREFIX must be set" >&2
             exit 1
           fi
-          gcloud storage rsync dist "gs://${GCS_BUCKET}/${GCS_PREFIX}" \
-            --recursive --delete-unmatched-destination-objects
+          # Old hashed assets are kept, not deleted: a page cached before this
+          # deploy still loads the script it names.
+          gcloud storage rsync dist "gs://${GCS_BUCKET}/${GCS_PREFIX}" --recursive
+          # The CDN may cache index.html for an hour by default, which would
+          # keep serving the previous build. It names every hashed asset, so
+          # it is revalidated on each request instead.
+          gcloud storage objects update "gs://${GCS_BUCKET}/${GCS_PREFIX%/}/index.html" \
+            --cache-control="no-cache"
