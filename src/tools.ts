@@ -4,130 +4,101 @@
  */
 
 /**
- * The WebMCP tools. Each one declares an `outputSchema`, so a client knows
- * before calling `open_letter` that its result has `child`, `chimney` and a
- * `wishes` list whose items match `build_toy`'s input.
+ * The WebMCP tools, written to the build-webmcp-tools skill
+ * (.agents/skills/build-webmcp-tools):
+ *
+ * - Only `open_letter` declares an `outputSchema`, because its fields are
+ *   what the other tools take as input (the skill's chaining payoff). The
+ *   other tools' results are terminal, so they omit it.
+ * - Failures resolve `{ error, code, retryable }` instead of throwing, since
+ *   a rejected `execute()` reaches the agent as a bare `UnknownError`.
+ * - Tools resolve only after the page has drawn the change.
  */
 
-import { COLOURS, TOYS, isColour, isToy } from "./workshop";
 import type { WorkshopApp } from "./app";
+import { COLOURS, TOYS, isColour, isToy, type Wish } from "./workshop";
 
-const wish = {
+const WISH_SCHEMA = {
   type: "object",
   properties: {
     toy: { type: "string", enum: TOYS, description: "The kind of toy." },
     colour: { type: "string", enum: COLOURS, description: "The colour to paint it." },
   },
   required: ["toy", "colour"],
-  additionalProperties: false,
 } as const;
 
-const OPEN_LETTER_OUTPUT = {
-  type: "object",
-  properties: {
-    child: { type: "string", description: "The name the child signed the letter with." },
-    chimney: { type: "string", description: "The child's address, exactly as the sleigh needs it." },
-    wishes: { type: "array", items: wish, description: "The toys the child asked for." },
-  },
-  required: ["child", "chimney", "wishes"],
-} as const;
-
-const BUILD_TOY_OUTPUT = {
-  type: "object",
-  properties: {
-    toyId: { type: "string" },
-    toy: wish.properties.toy,
-    colour: wish.properties.colour,
-    sackSize: { type: "integer", description: "How many toys are in the sack now." },
-  },
-  required: ["toyId", "toy", "colour", "sackSize"],
-} as const;
-
-const LOAD_SLEIGH_INPUT = {
-  type: "object",
-  properties: {
-    to: { type: "string", description: "The child's name, as signed on the letter." },
-    address: { type: "string", description: "The chimney address from the letter." },
-  },
-  required: ["to", "address"],
-  additionalProperties: false,
-} as const;
-
-const LOAD_SLEIGH_OUTPUT = {
-  oneOf: [
+export function describeTools(app: WorkshopApp): WebMCP.ModelContextTool[] {
+  return [
     {
-      type: "object",
-      properties: {
-        delivered: { const: true },
-        child: { type: "string" },
-        chimney: { type: "string" },
-        toys: { type: "array", items: wish },
-        deliveredCount: { type: "integer", description: "Letters answered so far." },
+      name: "open_letter",
+      description:
+        "Reads the child's letter waiting on Santa's desk. Use first, to learn which toys to build and where the sleigh must deliver them. A new letter arrives after each delivery.",
+      annotations: { readOnlyHint: true },
+      outputSchema: {
+        type: "object",
+        properties: {
+          child: { type: "string", description: "The name the letter is signed with. Pass it to load_sleigh." },
+          chimney: { type: "string", description: "Where the child lives, exactly as load_sleigh needs it." },
+          wishes: { type: "array", items: WISH_SCHEMA, description: "The toys asked for. Pass them to build_toys." },
+        },
+        required: ["child", "chimney", "wishes"],
       },
-      required: ["delivered", "child", "chimney", "toys", "deliveredCount"],
+      execute: () => app.openLetter(),
     },
     {
-      type: "object",
-      properties: {
-        error: { type: "string" },
-        code: { type: "string", enum: ["WRONG_CHILD", "WRONG_CHIMNEY", "MISSING_TOY", "UNWANTED_TOY", "SLEIGH_BUSY"] },
+      name: "build_toys",
+      description:
+        "Has the elves build toys and put them in Santa's sack. Use after reading a letter, with the toys it asks for; a wrong toy can be cleared with empty_sack.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          toys: { type: "array", items: WISH_SCHEMA, minItems: 1, description: "The toys to build, as listed in the letter." },
+        },
+        required: ["toys"],
       },
-      required: ["error", "code"],
+      execute: (input: Record<string, unknown>) => {
+        const toys = Array.isArray(input.toys) ? input.toys : [];
+        const wishes = toys.filter((t): t is Wish => typeof t === "object" && t !== null && isToy(t.toy) && isColour(t.colour));
+        if (wishes.length === 0 || wishes.length !== toys.length) {
+          return {
+            error: `Every toy needs a toy (${TOYS.join(", ")}) and a colour (${COLOURS.join(", ")}). Nothing was built.`,
+            code: "INVALID_TOY",
+            retryable: true,
+          };
+        }
+        return app.buildToys(wishes);
+      },
     },
-  ],
-} as const;
-
-function register(tool: WebMCP.ModelContextTool): void {
-  document.modelContext?.registerTool(tool).catch((error: unknown) => {
-    console.error(`Failed to register WebMCP tool "${tool.name}":`, error);
-  });
+    {
+      name: "load_sleigh",
+      description:
+        "Loads Santa's sack onto the sleigh and delivers it. Use once the sack holds exactly the toys in the letter. The sleigh refuses to leave, and says why, if the child, chimney or toys don't match.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          to: { type: "string", description: "The child's name, as signed on the letter." },
+          address: { type: "string", description: "The chimney from the letter." },
+        },
+        required: ["to", "address"],
+      },
+      execute: (input: Record<string, unknown>) =>
+        app.loadSleigh(typeof input.to === "string" ? input.to : "", typeof input.address === "string" ? input.address : ""),
+    },
+    {
+      name: "empty_sack",
+      description: "Takes every toy back out of Santa's sack. Use to start a letter again after building a wrong toy.",
+      execute: () => app.emptySack(),
+    },
+  ];
 }
 
-function text(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-
-export function registerTools(workshop: WorkshopApp): void {
-  register({
-    name: "open_letter",
-    description:
-      "Reads the child's letter on Santa's desk: who wrote it, their chimney address and the toys they wish for. A new letter arrives after each delivery.",
-    annotations: { readOnlyHint: true },
-    outputSchema: OPEN_LETTER_OUTPUT,
-    execute: () => workshop.openLetter(),
-  });
-
-  register({
-    name: "build_toy",
-    description: "Has an elf build one toy in one colour and put it in Santa's sack.",
-    inputSchema: wish,
-    outputSchema: BUILD_TOY_OUTPUT,
-    execute: async (input: Record<string, unknown>) => {
-      const { toy, colour } = input;
-      if (!isToy(toy) || !isColour(colour)) {
-        return { error: `The elves can build a ${TOYS.join(", ")} in ${COLOURS.join(", ")}.`, code: "INVALID_INPUT" };
-      }
-      return workshop.buildToy({ toy, colour });
-    },
-  });
-
-  register({
-    name: "load_sleigh",
-    description:
-      "Loads the sack onto the sleigh and delivers it. The sleigh only leaves when the name and chimney match the letter and the sack holds exactly the wished toys.",
-    inputSchema: LOAD_SLEIGH_INPUT,
-    outputSchema: LOAD_SLEIGH_OUTPUT,
-    execute: (input: Record<string, unknown>) => workshop.loadSleigh(text(input.to), text(input.address)),
-  });
-
-  register({
-    name: "empty_sack",
-    description: "Takes every toy out of the sack, to start the letter again.",
-    outputSchema: {
-      type: "object",
-      properties: { removed: { type: "integer" } },
-      required: ["removed"],
-    },
-    execute: () => workshop.emptySack(),
-  });
+/** Registers the tools until `signal` aborts. Does nothing where WebMCP is unavailable. */
+export function registerTools(app: WorkshopApp, signal?: AbortSignal): void {
+  const context = document.modelContext;
+  if (!context) return;
+  for (const tool of describeTools(app)) {
+    context.registerTool(tool, { signal }).catch((error: unknown) => {
+      console.error(`Failed to register WebMCP tool "${tool.name}":`, error);
+    });
+  }
 }

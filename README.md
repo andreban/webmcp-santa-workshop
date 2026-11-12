@@ -11,20 +11,27 @@ Live at <https://bandarra.me/apps/webmcp-santa-workshop/>.
 A child's letter sits on Santa's desk. It's random every time: a different
 child, chimney address and wish list. To answer it:
 
-1. `open_letter()` reads the letter and returns
+1. `open_letter()` reads the letter. Its `outputSchema` declares
    `{ child, chimney, wishes: [{ toy, colour }] }`.
-2. `build_toy({ toy, colour })` builds one toy and puts it in the sack. Call
-   it once for each item in `wishes`.
-3. `load_sleigh({ to, address })` delivers the sack. It only leaves when
-   `to` is the letter's `child`, `address` is its `chimney`, and the sack holds
-   exactly the wished toys. Otherwise it returns `{ error, code }`.
+2. `build_toys({ toys: [{ toy, colour }] })` builds the toys and puts them in
+   the sack. `wishes` from the letter fits `toys` as it is.
+3. `load_sleigh({ to, address })` delivers the sack. It only leaves when `to`
+   is the letter's `child`, `address` is its `chimney`, and the sack holds
+   exactly the wished toys. Otherwise it resolves `{ error, code, retryable }`.
 4. `empty_sack()` clears the sack after a mistake.
 
 Nothing in the letter can be typed in ahead of time, so the only way to win is
 to feed `open_letter`'s output into the other tools. It's built to be put
-together live in [WebMCP Macros](https://github.com/andreban/webmcp-macros):
-one call, a *for each* over `wishes`, and one last call that maps `child` to
-`to` and `chimney` to `address`.
+together live in [WebMCP Macros](https://github.com/andreban/webmcp-macros)
+with three blocks: call `open_letter` and save the result, call `build_toys`
+with its `wishes`, then call `load_sleigh` with its `child` as `to` and its
+`chimney` as `address`.
+
+The tools follow the `build-webmcp-tools` skill in
+`.agents/skills/build-webmcp-tools`, from
+[GoogleChromeLabs/webmcp-tools](https://github.com/GoogleChromeLabs/webmcp-tools).
+Only `open_letter` declares an `outputSchema`, because its fields feed the
+other tools; the others return terminal results.
 
 ## Requirements
 
@@ -45,6 +52,7 @@ npm run build   # type-check and build into dist/
 | `src/workshop.ts` | The rules: random letters, the sack, the sleigh's checks. No DOM |
 | `src/app.ts` | State and drawing, shared by the tools and the page's buttons |
 | `src/tools.ts` | The WebMCP tools and their input and output schemas |
+| `.agents/skills/` | Agent skills; `.claude/skills` links to it |
 
 ## Deployment
 
