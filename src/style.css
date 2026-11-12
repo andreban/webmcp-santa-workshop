@@ -1,0 +1,433 @@
+/**
+ * Copyright 2026 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+:root {
+  --night: #0b1d33;
+  --night-2: #17365a;
+  --paper: #fdf6e3;
+  --ink: #3b2a1a;
+  --text: #f4f7fb;
+  --muted: #a9b8cc;
+  --panel: rgb(255 255 255 / 0.07);
+  --border: rgb(255 255 255 / 0.15);
+  --red: #e53935;
+  --green: #2e9d44;
+  --blue: #1e88e5;
+  --gold: #f2b01e;
+  --purple: #8e24aa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: "Nunito", system-ui, sans-serif;
+  color: var(--text);
+  background: linear-gradient(180deg, var(--night) 0%, var(--night-2) 100%) fixed;
+}
+
+.snow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+    radial-gradient(3px 3px at 120px 80px, #fff, transparent),
+    radial-gradient(2px 2px at 200px 160px, #fff, transparent),
+    radial-gradient(2px 2px at 60px 220px, #fff, transparent),
+    radial-gradient(3px 3px at 260px 40px, #fff, transparent);
+  background-size: 300px 260px;
+  opacity: 0.6;
+  animation: snow 12s linear infinite;
+}
+
+@keyframes snow {
+  to {
+    background-position: 0 260px;
+  }
+}
+
+header {
+  text-align: center;
+  padding: 24px 16px 8px;
+}
+
+h1 {
+  font-family: "Mountains of Christmas", cursive;
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  margin: 0;
+  color: #fff;
+  text-shadow: 0 3px 0 var(--red);
+}
+
+header p {
+  margin: 6px 0;
+  color: var(--muted);
+}
+
+.counter strong {
+  color: var(--gold);
+  font-size: 1.2em;
+}
+
+.warning {
+  color: #ffd27a !important;
+}
+
+main {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 20px;
+}
+
+h2,
+h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+h3 {
+  margin-top: 16px;
+  font-size: 0.85rem;
+}
+
+/* The letter */
+
+.letter {
+  background: var(--paper);
+  color: var(--ink);
+  transform: rotate(-1.5deg);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+}
+
+.letter.read {
+  animation: read 0.6s ease;
+}
+
+@keyframes read {
+  50% {
+    transform: rotate(1deg) scale(1.04);
+  }
+}
+
+.hand {
+  font-family: "Caveat", cursive;
+  font-size: 1.7rem;
+  margin: 0 0 4px;
+}
+
+#wishes {
+  padding-left: 1.2em;
+  margin: 4px 0 12px;
+}
+
+#wishes li {
+  line-height: 1.6;
+}
+
+.ink {
+  font-weight: 700;
+}
+
+.ink-red {
+  color: var(--red);
+}
+.ink-green {
+  color: var(--green);
+}
+.ink-blue {
+  color: var(--blue);
+}
+.ink-gold {
+  color: #b77c00;
+}
+.ink-purple {
+  color: var(--purple);
+}
+
+.envelope {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 2px dashed rgb(59 42 26 / 0.3);
+  font-weight: 700;
+}
+
+/* Gifts */
+
+.gift {
+  display: inline-grid;
+  place-items: center;
+  width: 2.2em;
+  height: 2.2em;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  vertical-align: middle;
+  box-shadow: inset 0 -4px 0 rgb(0 0 0 / 0.2);
+}
+
+.gift-red {
+  background: var(--red);
+}
+.gift-green {
+  background: var(--green);
+}
+.gift-blue {
+  background: var(--blue);
+}
+.gift-gold {
+  background: var(--gold);
+}
+.gift-purple {
+  background: var(--purple);
+}
+
+/* The workbench */
+
+.elf-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.elf {
+  font-size: 3.5rem;
+  display: inline-block;
+}
+
+.elf[data-mood="busy"] {
+  animation: hammer 0.35s ease-in-out infinite alternate;
+}
+
+.elf[data-mood="happy"] {
+  animation: hop 0.5s ease 2;
+}
+
+.elf[data-mood="sad"] {
+  filter: grayscale(0.6);
+  transform: rotate(-8deg);
+}
+
+@keyframes hammer {
+  to {
+    transform: rotate(12deg);
+  }
+}
+
+@keyframes hop {
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+.bubble {
+  flex: 1;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #fff;
+  color: #1b2a3a;
+  font-weight: 700;
+}
+
+.bubble[data-mood="sad"] {
+  background: #ffe1e0;
+  color: #8a1c17;
+}
+
+.sack-wrap {
+  min-height: 3.2rem;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgb(120 72 32 / 0.45);
+  border: 2px solid rgb(180 120 60 / 0.6);
+}
+
+.sack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sack .gift {
+  font-size: 1.5rem;
+}
+
+.sack .gift.new {
+  animation: drop 0.45s cubic-bezier(0.3, 1.6, 0.6, 1);
+}
+
+@keyframes drop {
+  from {
+    transform: translateY(-30px) scale(0.4);
+    opacity: 0;
+  }
+}
+
+.muted {
+  color: var(--muted);
+  margin: 6px 0;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+button {
+  font: inherit;
+  font-weight: 700;
+  color: var(--text);
+  background: rgb(255 255 255 / 0.1);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: rgb(255 255 255 / 0.2);
+}
+
+button:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* The sky */
+
+.sky {
+  position: relative;
+  overflow: hidden;
+  min-height: 220px;
+  background: linear-gradient(180deg, #06101f, #1b3c63);
+}
+
+.moon {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  font-size: 2.4rem;
+}
+
+.sleigh {
+  position: absolute;
+  left: 16px;
+  bottom: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 2.4rem;
+}
+
+/* The emoji face left; the sleigh flies right. */
+.team {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+.sleigh-tag {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gold);
+  white-space: nowrap;
+  opacity: 0;
+}
+
+.sleigh.flying {
+  animation: fly 2.4s ease-in forwards;
+}
+
+.sleigh.flying .sleigh-tag {
+  opacity: 1;
+}
+
+@keyframes fly {
+  0% {
+    transform: translate(0, 0);
+  }
+  30% {
+    transform: translate(60px, -40px) rotate(-6deg);
+  }
+  100% {
+    transform: translate(900px, -160px) rotate(-10deg);
+  }
+}
+
+.roofs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  font-size: 2.4rem;
+  text-align: center;
+  letter-spacing: 6px;
+  border-top: 6px solid #fff;
+  background: #fff;
+  line-height: 1;
+  padding-top: 2px;
+}
+
+/* The log */
+
+.log-panel {
+  grid-column: 1 / -1;
+}
+
+.log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.log li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  animation: drop 0.3s ease;
+}
+
+.log code {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+  color: #d8e6f6;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

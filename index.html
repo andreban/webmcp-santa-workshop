@@ -1,0 +1,74 @@
+<!-- Copyright 2026 Google LLC / SPDX-License-Identifier: Apache-2.0 -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- WebMCP Origin Trial token (origin: bandarra.me, expires 2026-11-16) -->
+    <meta http-equiv="origin-trial" content="AtN81ZXL6bL5AITbK3adaFL0p9dXGjus52GNNDEPjEa98RxB5jFfM7Vgl2jTZcXYTciBsePArhYeOLOpr25wCQIAAABeeyJvcmlnaW4iOiJodHRwczovL2JhbmRhcnJhLm1lOjQ0MyIsImZlYXR1cmUiOiJXZWJNQ1AiLCJleHBpcnkiOjE3OTQ4NzM2MDAsImlzU3ViZG9tYWluIjp0cnVlfQ==" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Mountains+of+Christmas:wght@700&family=Nunito:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>WebMCP Santa's Workshop</title>
+  </head>
+  <body>
+    <div class="snow" aria-hidden="true"></div>
+    <header>
+      <h1>Santa's Workshop</h1>
+      <p>Every letter is different. Read it, build the toys, load the sleigh.</p>
+      <p class="counter">Letters answered: <strong id="delivered">0</strong></p>
+      <p id="no-webmcp" class="warning" hidden>
+        WebMCP isn't available in this browser, so no tools are registered. Use Chrome with WebMCP enabled.
+      </p>
+    </header>
+
+    <main>
+      <section class="panel letter" id="letter" aria-labelledby="letter-title">
+        <h2 id="letter-title" class="visually-hidden">The letter</h2>
+        <p class="hand">Dear Santa,</p>
+        <p class="hand">This year I would love:</p>
+        <ul id="wishes" class="hand"></ul>
+        <p class="hand">Love, <strong id="child"></strong></p>
+        <p class="envelope">📮 <span id="chimney"></span></p>
+      </section>
+
+      <section class="panel bench" aria-labelledby="bench-title">
+        <h2 id="bench-title">The workbench</h2>
+        <div class="elf-row">
+          <span id="elf" class="elf" data-mood="busy" role="img" aria-label="An elf">🧝</span>
+          <p id="elf-says" class="bubble" data-mood="busy">Waiting for orders!</p>
+        </div>
+        <h3>Santa's sack</h3>
+        <div class="sack-wrap">
+          <div id="sack" class="sack"></div>
+          <p id="sack-empty" class="muted">Empty</p>
+        </div>
+        <div class="buttons">
+          <button id="empty-sack" type="button">Empty sack</button>
+          <button id="skip-letter" type="button">Next letter</button>
+        </div>
+      </section>
+
+      <section class="panel sky" aria-labelledby="sky-title">
+        <h2 id="sky-title" class="visually-hidden">The sleigh</h2>
+        <span class="moon" aria-hidden="true">🌙</span>
+        <div id="sleigh" class="sleigh">
+          <span class="team" aria-hidden="true">🦌🦌🛷</span>
+          <span id="sleigh-tag" class="sleigh-tag"></span>
+        </div>
+        <div class="roofs" aria-hidden="true">🏠🏡🏠⛪🏡🏠</div>
+      </section>
+
+      <section class="panel log-panel" aria-labelledby="log-title">
+        <h2 id="log-title">Tool calls</h2>
+        <ol id="log" class="log"></ol>
+      </section>
+    </main>
+    <p id="announcer" class="visually-hidden" role="status"></p>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
