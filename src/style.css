@@ -17,10 +17,18 @@
   --blue: #1e88e5;
   --gold: #f2b01e;
   --purple: #8e24aa;
+  --pine: #0f3d2e;
+  --cane-red: #d62828;
+  --wood: #5a3420;
+  --wood-dark: #3f2314;
 }
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  background: var(--pine);
 }
 
 body {
@@ -28,41 +36,126 @@ body {
   min-height: 100dvh;
   font-family: "Nunito", system-ui, sans-serif;
   color: var(--text);
-  background: linear-gradient(180deg, var(--night) 0%, var(--night-2) 100%) fixed;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, rgb(242 176 30 / 0.18), transparent 70%),
+    linear-gradient(180deg, var(--night) 0%, #0d2a3a 55%, var(--pine) 100%) fixed;
+  overflow-x: hidden;
 }
 
 .snow {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image:
-    radial-gradient(2px 2px at 20px 30px, #fff, transparent),
-    radial-gradient(3px 3px at 120px 80px, #fff, transparent),
-    radial-gradient(2px 2px at 200px 160px, #fff, transparent),
-    radial-gradient(2px 2px at 60px 220px, #fff, transparent),
-    radial-gradient(3px 3px at 260px 40px, #fff, transparent);
-  background-size: 300px 260px;
-  opacity: 0.6;
-  animation: snow 12s linear infinite;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.snow span {
+  position: absolute;
+  top: -40px;
+  color: #fff;
+  opacity: 0.8;
+  animation-name: snow;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
 @keyframes snow {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(30px, 55vh) rotate(180deg);
+  }
+  100% {
+    transform: translate(-10px, 110vh) rotate(360deg);
+  }
+}
+
+/* A garland of bulbs along the top of the page. */
+.lights {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0 12px;
+  list-style: none;
+  height: 34px;
+  overflow: hidden;
+  background: radial-gradient(ellipse 30px 14px at 24px -6px, transparent 12px, #1d3a24 13px, #1d3a24 15px, transparent 16px) repeat-x;
+  background-size: 48px 34px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.lights li {
+  width: 12px;
+  height: 18px;
+  margin-top: 8px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: var(--cane-red);
+  box-shadow: 0 4px 14px 2px var(--cane-red);
+  animation: twinkle 1.6s ease-in-out infinite alternate;
+}
+
+.lights li:nth-child(4n + 2) {
+  background: var(--gold);
+  box-shadow: 0 4px 14px 2px var(--gold);
+  animation-delay: -0.4s;
+}
+
+.lights li:nth-child(4n + 3) {
+  background: #3ddc84;
+  box-shadow: 0 4px 14px 2px #3ddc84;
+  animation-delay: -0.8s;
+}
+
+.lights li:nth-child(4n + 4) {
+  background: #4fc3f7;
+  box-shadow: 0 4px 14px 2px #4fc3f7;
+  animation-delay: -1.2s;
+}
+
+@keyframes twinkle {
   to {
-    background-position: 0 260px;
+    opacity: 0.35;
+    box-shadow: none;
   }
 }
 
 header {
+  position: relative;
+  z-index: 1;
   text-align: center;
-  padding: 24px 16px 8px;
+  padding: 48px 16px 8px;
 }
 
 h1 {
   font-family: "Mountains of Christmas", cursive;
-  font-size: clamp(2.4rem, 6vw, 4rem);
+  font-size: clamp(2.4rem, 7vw, 4.4rem);
   margin: 0;
   color: #fff;
-  text-shadow: 0 3px 0 var(--red);
+  text-shadow:
+    0 3px 0 var(--cane-red),
+    0 0 24px rgb(242 176 30 / 0.55);
+}
+
+.tree {
+  display: inline-block;
+  font-size: 0.75em;
+  animation: sway 3s ease-in-out infinite alternate;
+}
+
+@keyframes sway {
+  from {
+    transform: rotate(-6deg);
+  }
+  to {
+    transform: rotate(6deg);
+  }
 }
 
 header p {
@@ -80,6 +173,7 @@ header p {
 }
 
 main {
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 16px;
@@ -90,10 +184,31 @@ main {
 }
 
 .panel {
-  background: var(--panel);
+  background: rgb(10 30 28 / 0.75);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px 20px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.3);
+}
+
+/* Candy-cane trim. */
+.bench,
+.log-panel {
+  border: 6px solid transparent;
+  background:
+    linear-gradient(var(--panel-fill), var(--panel-fill)) padding-box,
+    repeating-linear-gradient(45deg, var(--cane-red) 0 10px, #fff 10px 20px) border-box;
+}
+
+.bench {
+  background:
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 0.06) 0 2px, transparent 2px 38px) padding-box,
+    linear-gradient(180deg, var(--wood) 0%, var(--wood-dark) 100%) padding-box,
+    repeating-linear-gradient(45deg, var(--cane-red) 0 10px, #fff 10px 20px) border-box;
+}
+
+.log-panel {
+  --panel-fill: #0d2420;
 }
 
 h2,
@@ -102,7 +217,7 @@ h3 {
   font-size: 1rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--muted);
+  color: #f6d68a;
 }
 
 h3 {
@@ -113,10 +228,42 @@ h3 {
 /* The letter */
 
 .letter {
-  background: var(--paper);
+  position: relative;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 33px, rgb(59 42 26 / 0.08) 33px 34px),
+    var(--paper);
   color: var(--ink);
   transform: rotate(-1.5deg);
   box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+  border: 0;
+  border-top: 8px solid var(--cane-red);
+}
+
+/* A sprig of holly pinned to the corner, and a wax seal. */
+.holly {
+  position: absolute;
+  top: -18px;
+  right: -10px;
+  width: 72px;
+  height: 56px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 72 56'%3E%3Cpath d='M36 30 C24 14 14 22 4 12 C10 24 4 30 10 38 C18 32 26 40 36 30Z' fill='%231e7a3c' stroke='%230f4d24' stroke-width='2'/%3E%3Cpath d='M36 30 C48 14 58 22 68 12 C62 24 68 30 62 38 C54 32 46 40 36 30Z' fill='%23238a44' stroke='%230f4d24' stroke-width='2'/%3E%3Ccircle cx='32' cy='34' r='6' fill='%23d62828'/%3E%3Ccircle cx='42' cy='34' r='6' fill='%23e53935'/%3E%3Ccircle cx='37' cy='26' r='6' fill='%23c62828'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+  transform: rotate(12deg);
+}
+
+.seal {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #e85a5a, #9e1b1b);
+  color: #ffd6d6;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.3);
 }
 
 .letter.read {
@@ -166,7 +313,7 @@ h3 {
 
 .envelope {
   margin: 12px 0 0;
-  padding-top: 10px;
+  padding: 10px 56px 0 0;
   border-top: 2px dashed rgb(59 42 26 / 0.3);
   font-weight: 700;
 }
@@ -253,12 +400,16 @@ h3 {
   color: #8a1c17;
 }
 
+/* A red velvet sack with a fur trim. */
 .sack-wrap {
-  min-height: 3.2rem;
-  padding: 10px;
-  border-radius: 12px;
-  background: rgb(120 72 32 / 0.45);
-  border: 2px solid rgb(180 120 60 / 0.6);
+  min-height: 3.6rem;
+  padding: 12px;
+  border-radius: 14px 14px 26px 26px;
+  background: radial-gradient(ellipse at 50% 0%, #e53935, #8e1414);
+  border-top: 10px solid #fdfdfd;
+  box-shadow:
+    inset 0 -8px 16px rgb(0 0 0 / 0.3),
+    0 -3px 0 #e8e8e8;
 }
 
 .sack {
@@ -283,7 +434,7 @@ h3 {
 }
 
 .muted {
-  color: var(--muted);
+  color: #ffd6d6;
   margin: 6px 0;
 }
 
@@ -296,16 +447,17 @@ h3 {
 button {
   font: inherit;
   font-weight: 700;
-  color: var(--text);
-  background: rgb(255 255 255 / 0.1);
-  border: 1px solid var(--border);
+  color: #fff;
+  background: var(--cane-red);
+  border: 2px solid #fff;
   border-radius: 999px;
   padding: 6px 14px;
   cursor: pointer;
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.3);
 }
 
 button:hover {
-  background: rgb(255 255 255 / 0.2);
+  background: #b71c1c;
 }
 
 button:focus-visible {
@@ -319,7 +471,29 @@ button:focus-visible {
   position: relative;
   overflow: hidden;
   min-height: 220px;
-  background: linear-gradient(180deg, #06101f, #1b3c63);
+  background: linear-gradient(180deg, #050d1c, #16345a 80%, #2a4f7a);
+}
+
+.stars {
+  position: absolute;
+  inset: 0 0 40% 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 20%, #fff, transparent),
+    radial-gradient(1px 1px at 30% 45%, #fff, transparent),
+    radial-gradient(2px 2px at 48% 15%, #fff7c2, transparent),
+    radial-gradient(1px 1px at 63% 38%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 78% 60%, #fff, transparent),
+    radial-gradient(1px 1px at 22% 70%, #fff, transparent),
+    radial-gradient(2px 2px at 88% 30%, #fff7c2, transparent);
+  animation: twinkle 2.4s ease-in-out infinite alternate;
+}
+
+.pole {
+  position: absolute;
+  right: 14px;
+  bottom: 30px;
+  font-size: 2.8rem;
+  z-index: 1;
 }
 
 .moon {
@@ -373,18 +547,23 @@ button:focus-visible {
   }
 }
 
+/* Snowy rooftops with lit windows. */
 .roofs {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
   font-size: 2.4rem;
-  text-align: center;
-  letter-spacing: 6px;
-  border-top: 6px solid #fff;
-  background: #fff;
   line-height: 1;
-  padding-top: 2px;
+  padding: 0 8px 4px;
+  background: linear-gradient(180deg, transparent 70%, #f4f8ff 70%);
+}
+
+.roofs span {
+  filter: drop-shadow(0 0 6px rgb(255 200 90 / 0.8));
 }
 
 /* The log */
