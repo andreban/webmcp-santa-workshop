@@ -10,7 +10,7 @@ import { describeTools, registerTools } from "./tools";
 function fakeApp() {
   const app = {
     openLetter: vi.fn(() => ({ child: "Maya", chimney: "1 Holly Road, Oslo", wishes: [] })),
-    buildToys: vi.fn(async () => ({ built: [], sackSize: 0 })),
+    buildToy: vi.fn(async () => ({ toy: "train", colour: "red", sackSize: 1 })),
     loadSleigh: vi.fn(async () => ({ error: "x", code: "WRONG_CHILD", retryable: true })),
     emptySack: vi.fn(() => ({ removed: 0 })),
   };
@@ -49,36 +49,34 @@ describe("tool definitions", () => {
     const { tools } = fakeApp();
     expect(tools.filter((t) => t.outputSchema).map((t) => t.name)).toEqual(["open_letter"]);
     const letter = byName(tools, "open_letter").outputSchema as { properties: { wishes: { items: unknown } } };
-    const build = byName(tools, "build_toys").inputSchema as { properties: { toys: { items: unknown } } };
-    expect(letter.properties.wishes.items).toEqual(build.properties.toys.items);
+    expect(letter.properties.wishes.items).toEqual(byName(tools, "build_toy").inputSchema);
   });
 
   it("marks only the letter as read-only and declares no false hints", () => {
     const { tools } = fakeApp();
     expect(tools.map((t) => [t.name, t.annotations])).toEqual([
       ["open_letter", { readOnlyHint: true }],
-      ["build_toys", undefined],
+      ["build_toy", undefined],
       ["load_sleigh", undefined],
       ["empty_sack", undefined],
     ]);
   });
 });
 
-describe("build_toys", () => {
-  it("builds the toys it is given", async () => {
+describe("build_toy", () => {
+  it("builds the toy it is given", async () => {
     const { app, tools } = fakeApp();
-    const toys = [{ toy: "train", colour: "red" }, { toy: "kite", colour: "gold" }];
-    await byName(tools, "build_toys").execute({ toys }, client);
-    expect(app.buildToys).toHaveBeenCalledWith(toys);
+    await byName(tools, "build_toy").execute({ toy: "kite", colour: "gold" }, client);
+    expect(app.buildToy).toHaveBeenCalledWith({ toy: "kite", colour: "gold" });
   });
 
-  it("resolves an actionable error, building nothing, when any toy is unknown", async () => {
+  it("resolves an actionable error, building nothing, when the toy is unknown", async () => {
     const { app, tools } = fakeApp();
-    for (const toys of [[], [{ toy: "pony", colour: "red" }], [{ toy: "train", colour: "red" }, { toy: "train" }], "train"]) {
-      const result = await byName(tools, "build_toys").execute({ toys }, client);
+    for (const input of [{}, { toy: "pony", colour: "red" }, { toy: "train" }, { toy: "train", colour: "plaid" }]) {
+      const result = await byName(tools, "build_toy").execute(input, client);
       expect(result).toMatchObject({ code: "INVALID_TOY", retryable: true });
     }
-    expect(app.buildToys).not.toHaveBeenCalled();
+    expect(app.buildToy).not.toHaveBeenCalled();
   });
 });
 
@@ -101,7 +99,7 @@ describe("registerTools", () => {
     registerTools(fakeApp().app as unknown as WorkshopApp, signal);
     expect(registerTool.mock.calls.map(([tool, options]) => [tool.name, options])).toEqual([
       ["open_letter", { signal }],
-      ["build_toys", { signal }],
+      ["build_toy", { signal }],
       ["load_sleigh", { signal }],
       ["empty_sack", { signal }],
     ]);
