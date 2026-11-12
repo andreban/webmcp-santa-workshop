@@ -75,20 +75,15 @@ export class WorkshopApp {
     return structuredClone(this.#state.letter);
   }
 
-  /** Builds the toys one by one, so each lands in the sack where people can see it. */
-  async buildToys(wishes: readonly Wish[]): Promise<{ built: BuiltToy[]; sackSize: number }> {
-    this.#log("build_toys", { toys: wishes }, "🔨");
-    const built: BuiltToy[] = [];
-    for (const wish of wishes) {
-      this.#say(`Building a ${wish.colour} ${wish.toy} ${TOY_EMOJI[wish.toy]}…`, "busy");
-      await wait(BUILD_MS);
-      const { workshop, toy } = rules.buildToy(this.#state, wish);
-      this.#state = workshop;
-      this.#renderSack();
-      built.push(toy);
-    }
-    this.#say(built.length === 1 ? "One toy, coming up!" : `${built.length} toys, coming up!`, "happy");
-    return { built, sackSize: this.#state.sack.length };
+  async buildToy(wish: Wish): Promise<BuiltToy & { sackSize: number }> {
+    this.#log("build_toy", wish, TOY_EMOJI[wish.toy]);
+    this.#say(`Building a ${wish.colour} ${wish.toy}…`, "busy");
+    await wait(BUILD_MS);
+    const { workshop, toy } = rules.buildToy(this.#state, wish);
+    this.#state = workshop;
+    this.#renderSack();
+    this.#say(`One ${wish.colour} ${wish.toy}, coming up!`, "happy");
+    return { ...toy, sackSize: workshop.sack.length };
   }
 
   async loadSleigh(to: string, address: string): Promise<Delivery | Refusal> {

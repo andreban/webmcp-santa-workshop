@@ -16,9 +16,10 @@
     <title>WebMCP Santa's Workshop</title>
   </head>
   <body>
-    <div class="snow" aria-hidden="true"></div>
+    <div id="snow" class="snow" aria-hidden="true"></div>
+    <ul id="lights" class="lights" aria-hidden="true"></ul>
     <header>
-      <h1>Santa's Workshop</h1>
+      <h1><span class="tree" aria-hidden="true">🎄</span> Santa's Workshop <span class="tree" aria-hidden="true">🎄</span></h1>
       <p>Every letter is different. Read it, build the toys, load the sleigh.</p>
       <p class="counter">Letters answered: <strong id="delivered">0</strong></p>
       <p id="no-webmcp" class="warning" hidden>
@@ -29,6 +30,8 @@
     <main>
       <section class="panel letter" id="letter" aria-labelledby="letter-title">
         <h2 id="letter-title" class="visually-hidden">The letter</h2>
+        <span class="holly" aria-hidden="true"></span>
+        <span class="seal" aria-hidden="true">❄</span>
         <p class="hand">Dear Santa,</p>
         <p class="hand">This year I would love:</p>
         <ul id="wishes" class="hand"></ul>
@@ -42,7 +45,7 @@
           <span id="elf" class="elf" data-mood="busy" role="img" aria-label="An elf">🧝</span>
           <p id="elf-says" class="bubble" data-mood="busy">Waiting for orders!</p>
         </div>
-        <h3>Santa's sack</h3>
+        <h3>🎅 Santa's sack</h3>
         <div class="sack-wrap">
           <div id="sack" class="sack"></div>
           <p id="sack-empty" class="muted">Empty</p>
@@ -56,15 +59,17 @@
       <section class="panel sky" aria-labelledby="sky-title">
         <h2 id="sky-title" class="visually-hidden">The sleigh</h2>
         <span class="moon" aria-hidden="true">🌙</span>
+        <span class="stars" aria-hidden="true"></span>
+        <span class="pole" aria-hidden="true">🎄</span>
         <div id="sleigh" class="sleigh">
           <span class="team" aria-hidden="true">🦌🦌🛷</span>
           <span id="sleigh-tag" class="sleigh-tag"></span>
         </div>
-        <div class="roofs" aria-hidden="true">🏠🏡🏠⛪🏡🏠</div>
+        <div class="roofs" aria-hidden="true"><span>🏠</span><span>🏡</span><span>⛪</span><span>🏠</span><span>🏡</span><span>🏠</span></div>
       </section>
 
       <section class="panel log-panel" aria-labelledby="log-title">
-        <h2 id="log-title">Tool calls</h2>
+        <h2 id="log-title">📜 Tool calls</h2>
         <ol id="log" class="log"></ol>
       </section>
     </main>

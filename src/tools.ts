@@ -16,7 +16,7 @@
  */
 
 import type { WorkshopApp } from "./app";
-import { COLOURS, TOYS, isColour, isToy, type Wish } from "./workshop";
+import { COLOURS, TOYS, isColour, isToy } from "./workshop";
 
 const WISH_SCHEMA = {
   type: "object",
@@ -39,34 +39,27 @@ export function describeTools(app: WorkshopApp): WebMCP.ModelContextTool[] {
         properties: {
           child: { type: "string", description: "The name the letter is signed with. Pass it to load_sleigh." },
           chimney: { type: "string", description: "Where the child lives, exactly as load_sleigh needs it." },
-          wishes: { type: "array", items: WISH_SCHEMA, description: "The toys asked for. Pass them to build_toys." },
+          wishes: { type: "array", items: WISH_SCHEMA, description: "The toys asked for. Build each one with build_toy." },
         },
         required: ["child", "chimney", "wishes"],
       },
       execute: () => app.openLetter(),
     },
     {
-      name: "build_toys",
+      name: "build_toy",
       description:
-        "Has the elves build toys and put them in Santa's sack. Use after reading a letter, with the toys it asks for; a wrong toy can be cleared with empty_sack.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          toys: { type: "array", items: WISH_SCHEMA, minItems: 1, description: "The toys to build, as listed in the letter." },
-        },
-        required: ["toys"],
-      },
+        "Has an elf build one toy and put it in Santa's sack. Use once for each toy a letter asks for; a wrong toy can be cleared with empty_sack.",
+      inputSchema: WISH_SCHEMA,
       execute: (input: Record<string, unknown>) => {
-        const toys = Array.isArray(input.toys) ? input.toys : [];
-        const wishes = toys.filter((t): t is Wish => typeof t === "object" && t !== null && isToy(t.toy) && isColour(t.colour));
-        if (wishes.length === 0 || wishes.length !== toys.length) {
+        const { toy, colour } = input;
+        if (!isToy(toy) || !isColour(colour)) {
           return {
-            error: `Every toy needs a toy (${TOYS.join(", ")}) and a colour (${COLOURS.join(", ")}). Nothing was built.`,
+            error: `A toy needs a toy (${TOYS.join(", ")}) and a colour (${COLOURS.join(", ")}). Nothing was built.`,
             code: "INVALID_TOY",
             retryable: true,
           };
         }
-        return app.buildToys(wishes);
+        return app.buildToy({ toy, colour });
       },
     },
     {
