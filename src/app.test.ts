@@ -4,7 +4,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { OPEN_MS, WorkshopApp } from "./app";
+import { ARRIVE_MS, BUILD_MS, FLIGHT_MS, OPEN_MS, SHOW_MS, WorkshopApp } from "./app";
 
 class FakeClassList {
   #classes = new Set<string>();
@@ -307,5 +307,161 @@ describe("WorkshopApp letter open state machine", () => {
     expect(elements["letter-paper"].inert).toBe(false);
     expect(elements["open-letter-btn"].hidden).toBe(true);
     expect(elements["announcer"].textContent).toBe(`Letter from ${letter.child} opened.`);
+  });
+});
+
+async function prepareSleigh(app: WorkshopApp) {
+  const openPromise = app.openLetter();
+  await vi.advanceTimersByTimeAsync(OPEN_MS);
+  const letter = await openPromise;
+  for (const wish of letter.wishes) {
+    const buildPromise = app.buildToy(wish);
+    await vi.advanceTimersByTimeAsync(BUILD_MS + SHOW_MS);
+    await buildPromise;
+  }
+  return letter;
+}
+
+describe("WorkshopApp post-delivery letter arrival", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps loadSleigh() pending through FLIGHT_MS + ARRIVE_MS, transitions arriving -> closed, and announces on settle", async () => {
+    vi.useFakeTimers();
+    const { elements } = setupDom();
+    const app = new WorkshopApp();
+    app.render();
+
+    const letter = await prepareSleigh(app);
+    // Replay read so .read is present before delivery and must be cleared on arrival.
+    await app.openLetter();
+    expect(elements["letter"].classList.contains("read")).toBe(true);
+
+    let settled = false;
+    const deliveryPromise = app.loadSleigh(letter.child, letter.chimney).then((res) => {
+      settled = true;
+      return res;
+    });
+
+    await vi.advanceTimersByTimeAsync(FLIGHT_MS - 1);
+    expect(settled).toBe(false);
+    expect(elements["sleigh"].classList.contains("flying")).toBe(true);
+
+    const readsBeforeArrive = elements["letter"].offsetWidthReads;
+    await vi.advanceTimersByTimeAsync(1);
+    expect(settled).toBe(false);
+    expect(elements["sleigh"].classList.contains("flying")).toBe(false);
+    expect(elements["delivered"].textContent).toBe("1");
+    expect(elements["sack-empty"].hidden).toBe(false);
+    expect(elements["letter"].dataset["state"]).toBe("arriving");
+    expect(elements["letter"].classList.contains("read")).toBe(false);
+    expect(elements["letter"].offsetWidthReads).toBe(readsBeforeArrive + 1);
+    expect(elements["letter-paper"].getAttribute("aria-hidden")).toBe("true");
+    expect(elements["letter-paper"].inert).toBe(true);
+    expect(elements["open-letter-btn"].hidden).toBe(false);
+    expect(elements["open-letter-btn"].disabled).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(ARRIVE_MS - 1);
+    expect(settled).toBe(false);
+    expect(elements["letter"].dataset["state"]).toBe("arriving");
+
+    await vi.advanceTimersByTimeAsync(1);
+    const result = await deliveryPromise;
+    expect(settled).toBe(true);
+    expect("error" in result).toBe(false);
+    expect(elements["letter"].dataset["state"]).toBe("closed");
+    expect(elements["open-letter-btn"].hidden).toBe(false);
+    expect(elements["open-letter-btn"].disabled).toBe(false);
+    expect(elements["announcer"].textContent).toBe(`Delivered to ${letter.child}. A new letter has arrived.`);
+  });
+
+  it("returns SLEIGH_BUSY to concurrent loadSleigh() calls during post-flight arrival", async () => {
+    vi.useFakeTimers();
+    const { elements } = setupDom();
+    const app = new WorkshopApp();
+    app.render();
+
+    const letter = await prepareSleigh(app);
+    const first = app.loadSleigh(letter.child, letter.chimney);
+
+    await vi.advanceTimersByTimeAsync(FLIGHT_MS);
+    expect(elements["letter"].dataset["state"]).toBe("arriving");
+
+    const busy = await app.loadSleigh(letter.child, letter.chimney);
+    expect(busy).toMatchObject({ code: "SLEIGH_BUSY", retryable: true });
+
+    await vi.advanceTimersByTimeAsync(ARRIVE_MS);
+    const delivered = await first;
+    expect("error" in delivered).toBe(false);
+    expect(elements["letter"].dataset["state"]).toBe("closed");
+  });
+
+  it("waits for arrival to finish before openLetter() transitions opening -> open", async () => {
+    vi.useFakeTimers();
+    const { elements } = setupDom();
+    const app = new WorkshopApp();
+    app.render();
+
+    const firstLetter = await prepareSleigh(app);
+    const delivery = app.loadSleigh(firstLetter.child, firstLetter.chimney);
+
+    await vi.advanceTimersByTimeAsync(FLIGHT_MS);
+    expect(elements["letter"].dataset["state"]).toBe("arriving");
+
+    let opened = false;
+    const openPromise = app.openLetter().then((nextLetter) => {
+      opened = true;
+      return nextLetter;
+    });
+
+    // Still arriving — must not switch to opening yet.
+    await vi.advanceTimersByTimeAsync(ARRIVE_MS - 1);
+    expect(opened).toBe(false);
+    expect(elements["letter"].dataset["state"]).toBe("arriving");
+
+    // Arrival completes and triggers opening phase.
+    await vi.advanceTimersByTimeAsync(1);
+    await delivery;
+    expect(opened).toBe(false);
+    expect(elements["letter"].dataset["state"]).toBe("opening");
+
+    await vi.advanceTimersByTimeAsync(OPEN_MS - 1);
+    expect(opened).toBe(false);
+    expect(elements["letter"].dataset["state"]).toBe("opening");
+
+    await vi.advanceTimersByTimeAsync(1);
+    const nextLetter = await openPromise;
+    expect(opened).toBe(true);
+    expect(elements["letter"].dataset["state"]).toBe("open");
+    expect(nextLetter.child).toBe(elements["child"].textContent);
+    expect(elements["announcer"].textContent).toBe(`Letter from ${nextLetter.child} opened.`);
+  });
+
+  it("resolves post-delivery arrival immediately under prefers-reduced-motion: reduce without waiting ARRIVE_MS", async () => {
+    vi.useFakeTimers();
+    const { elements } = setupDom({ reducedMotion: true });
+    const app = new WorkshopApp();
+    app.render();
+
+    const letter = await prepareSleigh(app);
+
+    let settled = false;
+    const delivery = app.loadSleigh(letter.child, letter.chimney).then((res) => {
+      settled = true;
+      return res;
+    });
+
+    await vi.advanceTimersByTimeAsync(FLIGHT_MS - 1);
+    expect(settled).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    const result = await delivery;
+    expect(settled).toBe(true);
+    expect("error" in result).toBe(false);
+    expect(elements["letter"].dataset["state"]).toBe("closed");
+    expect(elements["open-letter-btn"].disabled).toBe(false);
+    expect(elements["announcer"].textContent).toBe(`Delivered to ${letter.child}. A new letter has arrived.`);
   });
 });
