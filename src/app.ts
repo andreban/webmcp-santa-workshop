@@ -123,7 +123,7 @@ export class WorkshopApp {
     if (this.#bound) return;
     this.#bound = true;
     element<HTMLButtonElement>("empty-sack").onclick = () => void this.emptySack();
-    element<HTMLButtonElement>("skip-letter").onclick = () => this.#skipLetter();
+    element<HTMLButtonElement>("skip-letter").onclick = () => void this.#skipLetter();
     element<HTMLButtonElement>("open-letter-btn").onclick = () => void this.#openFromButton();
   }
 
@@ -229,10 +229,12 @@ export class WorkshopApp {
     return { removed };
   }
 
-  #skipLetter(): void {
+  async #skipLetter(): Promise<void> {
+    if (this.#flying || this.#arriving !== null || this.#opening !== null) return;
     this.#state = { ...rules.newWorkshop(), delivered: this.#state.delivered };
-    this.render();
+    this.#renderSack();
     this.#say("A new letter has arrived.", "busy");
+    await this.#arriveNewLetter();
   }
 
   #renderLetter(): void {
