@@ -24,14 +24,29 @@ const TOY_EMOJI: Record<Toy, string> = {
 };
 
 /**
- * How long the elf takes per toy, how long a finished toy stays in the
- * spotlight, and how long the sleigh is away, so an audience can follow along.
+ * How long the envelope takes to open, how long the elf takes per toy, how long
+ * a finished toy stays in the spotlight, and how long the sleigh is away, so an
+ * audience can follow along.
  */
+export const OPEN_MS = 750;
 const BUILD_MS = 700;
 const SHOW_MS = 600;
 const FLIGHT_MS = 2400;
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+type LetterPhase = "closed" | "opening" | "open";
+
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+const pause = (ms: number): Promise<void> =>
+  prefersReducedMotion() ? Promise.resolve() : wait(ms);
 
 function element<T extends HTMLElement = HTMLElement>(id: string): T {
   const found = document.getElementById(id);
@@ -61,24 +76,78 @@ function gift(toy: Wish): HTMLElement {
 export class WorkshopApp {
   #state = rules.newWorkshop();
   #flying = false;
+  #letterPhase: LetterPhase = "closed";
+  #opening: Promise<rules.Letter> | null = null;
+  #bound = false;
   /** Builds run one after another, even when calls overlap, so every toy gets its own animation. */
   #builds: Promise<unknown> = Promise.resolve();
 
   render(): void {
+    this.#bindControls();
     this.#renderLetter();
+    element("letter").classList.remove("read");
+    this.#setLetterPhase("closed");
     this.#renderSack();
     element("delivered").textContent = String(this.#state.delivered);
-    element<HTMLButtonElement>("empty-sack").onclick = () => void this.emptySack();
-    element<HTMLButtonElement>("skip-letter").onclick = () => this.#skipLetter();
   }
 
-  openLetter(): rules.Letter {
+  openLetter(): Promise<rules.Letter> {
+    if (this.#opening) return this.#opening;
     this.#log("open_letter", {}, "📜");
-    const letter = element("letter");
-    letter.classList.remove("read");
-    void letter.offsetWidth; // Restarts the animation.
-    letter.classList.add("read");
-    return structuredClone(this.#state.letter);
+    if (this.#letterPhase === "open") {
+      const letter = element("letter");
+      letter.classList.remove("read");
+      void letter.offsetWidth; // Restarts the animation.
+      letter.classList.add("read");
+      return Promise.resolve(structuredClone(this.#state.letter));
+    }
+    const opening = (async () => {
+      try {
+        this.#setLetterPhase("opening");
+        await pause(OPEN_MS);
+        this.#setLetterPhase("open");
+        this.#announce(`Letter from ${this.#state.letter.child} opened.`);
+        return structuredClone(this.#state.letter);
+      } finally {
+        this.#opening = null;
+      }
+    })();
+    this.#opening = opening;
+    return opening;
+  }
+
+  #bindControls(): void {
+    if (this.#bound) return;
+    this.#bound = true;
+    element<HTMLButtonElement>("empty-sack").onclick = () => void this.emptySack();
+    element<HTMLButtonElement>("skip-letter").onclick = () => this.#skipLetter();
+    element<HTMLButtonElement>("open-letter-btn").onclick = () => void this.#openFromButton();
+  }
+
+  async #openFromButton(): Promise<void> {
+    const button = element<HTMLButtonElement>("open-letter-btn");
+    const active = document.activeElement;
+    const shouldRestore = active === button || active == null || active === document.body;
+    await this.openLetter();
+    if (
+      button.hidden &&
+      shouldRestore &&
+      (document.activeElement == null || document.activeElement === document.body || document.activeElement === button)
+    ) {
+      element("letter").focus({ preventScroll: true });
+    }
+  }
+
+  #setLetterPhase(phase: LetterPhase): void {
+    this.#letterPhase = phase;
+    element("letter").dataset["state"] = phase;
+    const paper = element("letter-paper");
+    const hidden = phase !== "open";
+    paper.setAttribute("aria-hidden", String(hidden));
+    paper.inert = hidden;
+    const button = element<HTMLButtonElement>("open-letter-btn");
+    button.hidden = phase === "open";
+    button.disabled = phase !== "closed";
   }
 
   buildToy(wish: Wish): Promise<BuiltToy & { sackSize: number }> {

@@ -9,7 +9,7 @@ import { describeTools, registerTools } from "./tools";
 
 function fakeApp() {
   const app = {
-    openLetter: vi.fn(() => ({ child: "Maya", chimney: "1 Holly Road, Oslo", wishes: [] })),
+    openLetter: vi.fn(async () => ({ child: "Maya", chimney: "1 Holly Road, Oslo", wishes: [] })),
     buildToy: vi.fn(async () => ({ toy: "train", colour: "red", sackSize: 1 })),
     loadSleigh: vi.fn(async () => ({ error: "x", code: "WRONG_CHILD", retryable: true })),
     emptySack: vi.fn(() => ({ removed: 0 })),
@@ -60,6 +60,29 @@ describe("tool definitions", () => {
       ["load_sleigh", undefined],
       ["empty_sack", undefined],
     ]);
+  });
+});
+
+describe("open_letter", () => {
+  it("awaits app.openLetter() and resolves with the letter", async () => {
+    const { app, tools } = fakeApp();
+    let resolveLetter!: (letter: { child: string; chimney: string; wishes: [] }) => void;
+    app.openLetter.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveLetter = resolve;
+      }),
+    );
+    let settled = false;
+    const pending = Promise.resolve(byName(tools, "open_letter").execute({}, client)).then((result) => {
+      settled = true;
+      return result;
+    });
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    const letter = { child: "Maya", chimney: "1 Holly Road, Oslo", wishes: [] as [] };
+    resolveLetter(letter);
+    await expect(pending).resolves.toEqual(letter);
+    expect(app.openLetter).toHaveBeenCalledTimes(1);
   });
 });
 

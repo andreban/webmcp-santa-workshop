@@ -28,9 +28,9 @@
     </header>
 
     <main>
-      <section class="panel letter" id="letter" aria-labelledby="letter-title" tabindex="-1" data-state="open">
+      <section class="panel letter" id="letter" aria-labelledby="letter-title" tabindex="-1" data-state="closed">
         <h2 id="letter-title" class="visually-hidden">The letter</h2>
-        <div id="letter-paper" class="letter-paper">
+        <div id="letter-paper" class="letter-paper" aria-hidden="true" inert>
           <span class="holly" aria-hidden="true"></span>
           <span class="seal" aria-hidden="true">❄</span>
           <p class="hand">Dear Santa,</p>
@@ -39,7 +39,7 @@
           <p class="hand">Love, <strong id="child"></strong></p>
           <p class="envelope">📮 <span id="chimney"></span></p>
         </div>
-        <button id="open-letter-btn" class="envelope-cover" type="button" aria-label="Open letter to Santa" hidden>
+        <button id="open-letter-btn" class="envelope-cover" type="button" aria-label="Open letter to Santa">
           <span class="envelope-flap" aria-hidden="true"></span>
           <span class="envelope-body" aria-hidden="true">
             <span class="envelope-seal">❄</span>
