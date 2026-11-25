@@ -24,16 +24,17 @@ const TOY_EMOJI: Record<Toy, string> = {
 };
 
 /**
- * How long the envelope takes to open, how long the elf takes per toy, how long
- * a finished toy stays in the spotlight, and how long the sleigh is away, so an
- * audience can follow along.
+ * How long the envelope takes to open, how long a new letter takes to arrive,
+ * how long the elf takes per toy, how long a finished toy stays in the
+ * spotlight, and how long the sleigh is away, so an audience can follow along.
  */
 export const OPEN_MS = 750;
-const BUILD_MS = 700;
-const SHOW_MS = 600;
-const FLIGHT_MS = 2400;
+export const ARRIVE_MS = 650;
+export const BUILD_MS = 700;
+export const SHOW_MS = 600;
+export const FLIGHT_MS = 2400;
 
-type LetterPhase = "closed" | "opening" | "open";
+type LetterPhase = "closed" | "opening" | "open" | "arriving";
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -78,6 +79,7 @@ export class WorkshopApp {
   #flying = false;
   #letterPhase: LetterPhase = "closed";
   #opening: Promise<rules.Letter> | null = null;
+  #arriving: Promise<void> | null = null;
   #bound = false;
   /** Builds run one after another, even when calls overlap, so every toy gets its own animation. */
   #builds: Promise<unknown> = Promise.resolve();
@@ -92,6 +94,7 @@ export class WorkshopApp {
   }
 
   openLetter(): Promise<rules.Letter> {
+    if (this.#arriving) return this.#arriving.then(() => this.openLetter());
     if (this.#opening) return this.#opening;
     this.#log("open_letter", {}, "📜");
     if (this.#letterPhase === "open") {
@@ -150,6 +153,24 @@ export class WorkshopApp {
     button.disabled = phase !== "closed";
   }
 
+  #arriveNewLetter(): Promise<void> {
+    const arriving = (async () => {
+      try {
+        this.#renderLetter();
+        const letter = element("letter");
+        letter.classList.remove("read");
+        this.#setLetterPhase("arriving");
+        void letter.offsetWidth; // Restarts the arrival animation.
+        await pause(ARRIVE_MS);
+        this.#setLetterPhase("closed");
+      } finally {
+        this.#arriving = null;
+      }
+    })();
+    this.#arriving = arriving;
+    return arriving;
+  }
+
   buildToy(wish: Wish): Promise<BuiltToy & { sackSize: number }> {
     this.#log("build_toy", wish, TOY_EMOJI[wish.toy]);
     const build = this.#builds.then(() => this.#build(wish));
@@ -182,16 +203,21 @@ export class WorkshopApp {
     this.#say(`Off to ${result.child}! 🎄`, "happy");
     this.#flying = true;
     const sleigh = element("sleigh");
-    element("sleigh-tag").textContent = `${result.child} · ${result.chimney}`;
-    sleigh.classList.add("flying");
-    element("sack").replaceChildren();
-    await wait(FLIGHT_MS);
-    sleigh.classList.remove("flying");
-    this.#flying = false;
-    this.#state = workshop;
-    this.render();
-    this.#announce(`Delivered to ${result.child}. A new letter has arrived.`);
-    return result;
+    try {
+      element("sleigh-tag").textContent = `${result.child} · ${result.chimney}`;
+      sleigh.classList.add("flying");
+      element("sack").replaceChildren();
+      await wait(FLIGHT_MS);
+      sleigh.classList.remove("flying");
+      this.#state = workshop;
+      element("delivered").textContent = String(this.#state.delivered);
+      this.#renderSack();
+      await this.#arriveNewLetter();
+      this.#announce(`Delivered to ${result.child}. A new letter has arrived.`);
+      return result;
+    } finally {
+      this.#flying = false;
+    }
   }
 
   emptySack(): { removed: number } {
