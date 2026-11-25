@@ -28,15 +28,25 @@
     </header>
 
     <main>
-      <section class="panel letter" id="letter" aria-labelledby="letter-title">
+      <section class="panel letter" id="letter" aria-labelledby="letter-title" tabindex="-1" data-state="open">
         <h2 id="letter-title" class="visually-hidden">The letter</h2>
-        <span class="holly" aria-hidden="true"></span>
-        <span class="seal" aria-hidden="true">❄</span>
-        <p class="hand">Dear Santa,</p>
-        <p class="hand">This year I would love:</p>
-        <ul id="wishes" class="hand"></ul>
-        <p class="hand">Love, <strong id="child"></strong></p>
-        <p class="envelope">📮 <span id="chimney"></span></p>
+        <div id="letter-paper" class="letter-paper">
+          <span class="holly" aria-hidden="true"></span>
+          <span class="seal" aria-hidden="true">❄</span>
+          <p class="hand">Dear Santa,</p>
+          <p class="hand">This year I would love:</p>
+          <ul id="wishes" class="hand"></ul>
+          <p class="hand">Love, <strong id="child"></strong></p>
+          <p class="envelope">📮 <span id="chimney"></span></p>
+        </div>
+        <button id="open-letter-btn" class="envelope-cover" type="button" aria-label="Open letter to Santa" hidden>
+          <span class="envelope-flap" aria-hidden="true"></span>
+          <span class="envelope-body" aria-hidden="true">
+            <span class="envelope-seal">❄</span>
+            <span class="envelope-address">To: Santa Claus · North Pole</span>
+            <span class="envelope-hint">Open letter</span>
+          </span>
+        </button>
       </section>
 
       <section class="panel bench" aria-labelledby="bench-title">
