@@ -229,14 +229,200 @@ h3 {
 
 .letter {
   position: relative;
+  display: grid;
+  min-height: 290px;
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+  transform: rotate(-1.5deg);
+  box-shadow: none;
+  border: 0;
+}
+
+.letter:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 4px;
+}
+
+.letter-paper {
+  position: relative;
+  min-height: 290px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  border-top: 8px solid var(--cane-red);
   background:
     repeating-linear-gradient(180deg, transparent 0 33px, rgb(59 42 26 / 0.08) 33px 34px),
     var(--paper);
-  color: var(--ink);
-  transform: rotate(-1.5deg);
   box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
-  border: 0;
-  border-top: 8px solid var(--cane-red);
+  transition:
+    opacity 450ms cubic-bezier(0.22, 1, 0.36, 1) 220ms,
+    transform 450ms cubic-bezier(0.22, 1, 0.36, 1) 220ms;
+}
+
+.envelope-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border: 2px solid rgb(139 94 52 / 0.35);
+  border-radius: 16px;
+  background: linear-gradient(160deg, #f9edd2 0%, #efe0bd 100%);
+  color: var(--ink);
+  box-shadow:
+    0 10px 30px rgb(0 0 0 / 0.35),
+    inset 0 0 0 6px rgb(255 255 255 / 0.35);
+  perspective: 900px;
+  overflow: visible;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    opacity 420ms ease 260ms;
+}
+
+.envelope-cover[hidden] {
+  display: none;
+}
+
+.envelope-cover:hover {
+  background: linear-gradient(160deg, #fcf2da 0%, #f3e5c5 100%);
+}
+
+#letter[data-state="closed"] .envelope-cover:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 14px 34px rgb(0 0 0 / 0.4),
+    inset 0 0 0 6px rgb(255 255 255 / 0.45);
+}
+
+.envelope-cover:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 4px;
+}
+
+.envelope-cover:disabled {
+  cursor: default;
+}
+
+.envelope-flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 54%;
+  background: linear-gradient(180deg, #f3e2bc 0%, #e5cfa0 100%);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  border-radius: 14px 14px 0 0;
+  transform-origin: top center;
+  transform: rotateX(0deg);
+  filter: drop-shadow(0 3px 4px rgb(59 42 26 / 0.18));
+  z-index: 2;
+  transition: transform 320ms ease-in-out;
+}
+
+.envelope-body {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.envelope-seal {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #e85a5a, #9e1b1b);
+  color: #ffd6d6;
+  font-size: 1.6rem;
+  box-shadow:
+    0 4px 10px rgb(0 0 0 / 0.35),
+    inset 0 0 0 3px rgb(255 214 214 / 0.25);
+  transition:
+    transform 250ms ease-out,
+    opacity 250ms ease-out;
+}
+
+.envelope-address {
+  font-family: "Caveat", cursive;
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.envelope-hint {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: var(--cane-red);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.25);
+}
+
+#letter[data-state="closed"] .envelope-cover {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+#letter[data-state="closed"] .envelope-flap {
+  transform: rotateX(0deg);
+}
+
+#letter[data-state="closed"] .envelope-seal {
+  opacity: 1;
+  transform: scale(1);
+}
+
+#letter[data-state="closed"] .letter-paper {
+  opacity: 0;
+  transform: translateY(14px) scale(0.97);
+  pointer-events: none;
+}
+
+#letter[data-state="opening"] .envelope-seal {
+  opacity: 0;
+  transform: scale(1.25);
+}
+
+#letter[data-state="opening"] .envelope-flap {
+  transform: rotateX(-175deg);
+}
+
+#letter[data-state="opening"] .letter-paper {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: none;
+}
+
+#letter[data-state="opening"] .envelope-cover {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition:
+    opacity 420ms ease 260ms,
+    transform 420ms ease 260ms;
+}
+
+#letter[data-state="open"] .letter-paper {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+#letter[data-state="open"] .envelope-cover {
+  display: none;
 }
 
 /* A sprig of holly pinned to the corner, and a wax seal. */
@@ -608,5 +794,7 @@ button:focus-visible {
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }
